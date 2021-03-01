@@ -8,10 +8,9 @@ sql = pydict.sql_dict.get
 user = sql('user')
 password = sql('password')
 host = sql('host')
-charset = sql('charset') + host
+charset = sql('charset')
 cusrorType = pymysql.cursors.DictCursor
 
-print(charset)
 def create_tbl_receipts():
     db = sql('db_etsy')
     con = pymysql.connect(user=user,
@@ -22,14 +21,14 @@ def create_tbl_receipts():
                           cursorclass=cusrorType)
 
     with con.cursor() as cur:
-        qry_tbl_receipts = """CREATE TABLE IF NOT EXISTS tbl_Etsy_Receipts(
+        qry_tbl_receipts = """CREATE TABLE IF NOT EXISTS tbl_etsy_receipts(
             id INT AUTO_INCREMENT PRIMARY KEY,
             receipt_id BIGINT,adjusted_grandtotal DOUBLE,
             buyer_adjusted_grandtotal DOUBLE,
             buyer_email TEXT,
             buyer_user_id BIGINT,
             city TEXT,
-            creation_est DATETIME,
+            created DATETIME,
             currency_code TEXT,
             days_from_due_date INT,
             day INT,
@@ -66,7 +65,9 @@ def create_tbl_receipts():
             zip TEXT)
             ENGINE=INNODB;"""
         cur.execute(qry_tbl_receipts)
-    con.commit()
+        con.commit()
+    cur.close()
+    con.close()
 
 def create_tbl_transactions():
     db = sql('db_etsy')
@@ -78,11 +79,11 @@ def create_tbl_transactions():
                           cursorclass=cusrorType)
 
     with con.cursor() as cur:
-        qry_tbl_transactions = """CREATE TABLE IF NOT EXISTS tbl_Etsy_Trans(
+        qry_tbl_transactions = """CREATE TABLE IF NOT EXISTS tbl_etsy_trans(
             id INT AUTO_INCREMENT PRIMARY KEY,
             buyer_user_id BIGINT,
             currency_code TEXT,
-            creation_est DATETIME,
+            created DATETIME,
             day INT,
             import_timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
             listing_id BIGINT,
@@ -97,7 +98,9 @@ def create_tbl_transactions():
             year INT)
             ENGINE=INNODB;"""
         cur.execute(qry_tbl_transactions)
-    con.commit()
+        con.commit()
+    cur.close()
+    con.close()
 
 def create_tbl_api_log():
     db = sql('db_rtc')
@@ -109,17 +112,17 @@ def create_tbl_api_log():
                           cursorclass=cusrorType)
 
     with con.cursor() as cur:
-        qry_updates = """CREATE TABLE IF NOT EXISTS tbl_API_Log(
+        qry_create_table = """CREATE TABLE IF NOT EXISTS tbl_api_log(
         id INT AUTO_INCREMENT PRIMARY KEY,
         timestamp DATETIME,
-        api TEXT,
-        data TEXT,
-        api_code TEXT,
+        market TEXT,
+        endpoint TEXT,
+        api_code INT,
         code_descr TEXT)
         ENGINE=INNODB;"""
-    cur.execute(qry_updates)
-    con.commit()
-
+        cur.execute(qry_create_table)
+    cur.close()
+    con.close()
 
 def create_tables():
     create_tbl_receipts()

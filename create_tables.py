@@ -53,6 +53,7 @@ def create_tbl_receipts():
             second_line TEXT,
             shipped_date DATETIME,
             state TEXT,
+            status TEXT,
             subtotal DOUBLE,
             total_price DOUBLE,
             total_shipping_cost DOUBLE,

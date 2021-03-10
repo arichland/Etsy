@@ -1,11 +1,11 @@
 _author_ = 'arichland'
-
 import requests
+import pymysql
+import pydict
 import pprint
 from datetime import datetime, timedelta, timezone, date
-import pydict
-import pymysql
 pp = pprint.PrettyPrinter(indent=1)
+data = {}
 
 # Setup Epoch timestamp for Etsy API
 dt = datetime
@@ -18,14 +18,9 @@ utc_sec = td(seconds=18000)
 sec = td(seconds=86400)
 ts = dt.fromtimestamp
 
-# API URLs
-urls = pydict.etsy_urls.get
-cusrorType = pymysql.cursors.DictCursor
-
 class sql:
-
-    def new_receipts(data):
-        print(" Saving Receipt Data to SQL:")
+    def receipts_new(data):
+        print("   Saving New Receipts to SQL:")
         user = pydict.sql_dict.get('user')
         password = pydict.sql_dict.get('password')
         host = pydict.sql_dict.get('host')
@@ -34,13 +29,13 @@ class sql:
         con = pymysql.connect(user=user, password=password, host=host, database=db, charset=charset)
 
         with con.cursor() as cur:
-            print("     Creating Temp Table")
+            print("   Creating Temp Table")
             qry_temp_table = """CREATE TEMPORARY TABLE IF NOT EXISTS tbl_temp like etsy.tbl_etsy_receipts;"""
             cur.execute(qry_temp_table)
             con.commit()
 
-            print("     Inserting API Data Into Temp Table")
-            for k in data['results']:
+            print("   Inserting Data Into Temp Table")
+            for k in data.values():
                 created = ts(k['creation_tsz']).isoformat()
                 receipt_id = k["receipt_id"],
                 adjusted_grandtotal = float(k['adjusted_grandtotal']),
@@ -199,6 +194,7 @@ class sql:
                                     second_line,
                                     shipped_date,
                                     state,
+                                    status,
                                     subtotal,
                                     total_price,
                                     total_shipping_cost,
@@ -209,7 +205,7 @@ class sql:
                                     week_num,
                                     year,
                                     zip)
-                                    
+
                                 SELECT 
                                     SQ1.import_timestamp,
                                     SQ1.receipt_id,
@@ -242,6 +238,7 @@ class sql:
                                     SQ1.second_line,
                                     SQ1.shipped_date,
                                     SQ1.state,
+                                    SQ1.status,
                                     SQ1.subtotal,
                                     SQ1.total_price,
                                     SQ1.total_shipping_cost,
@@ -286,6 +283,7 @@ class sql:
                                     second_line,
                                     shipped_date,
                                     state,
+                                    "Open" AS status,
                                     subtotal,
                                     total_price,
                                     total_shipping_cost,
@@ -297,15 +295,15 @@ class sql:
                                     year,
                                     zip 
                                     FROM tbl_temp) AS SQ1 LEFT JOIN tbl_etsy_receipts ON SQ1.receipt_id = tbl_etsy_receipts.receipt_id WHERE tbl_etsy_receipts.receipt_id IS NULL;"""
-            print("     Inserting New Data Into Table")
+            print("   Inserting New Data Into Table")
             cur.execute(qry_insert_new_data)
             con.commit()
         cur.close()
         con.close()
-        print(" Process Complete\n")
+        print("   New Receipts Entered into SQL")
 
-    def new_trans(data):
-        print(" Saving Transaction Data to SQL:")
+    def receipts_update(data):
+        print("   Saving Receipt Updates to SQL:")
         user = pydict.sql_dict.get('user')
         password = pydict.sql_dict.get('password')
         host = pydict.sql_dict.get('host')
@@ -314,136 +312,13 @@ class sql:
         con = pymysql.connect(user=user, password=password, host=host, database=db, charset=charset)
 
         with con.cursor() as cur:
-            print("     Creating Temp Table")
-            qry_temp_table = """CREATE TEMPORARY TABLE IF NOT EXISTS tbl_temp like etsy.tbl_etsy_trans;"""
-            cur.execute(qry_temp_table)
-            con.commit()
-
-            print("     Inserting API Data Into Temp Table")
-            for k in data['results']:
-                transaction_id = k["transaction_id"]
-                buyer_user_id = k['buyer_user_id']
-                currency_code = k['currency_code']
-                created = ts(k['creation_tsz']).isoformat()
-                day = strip(created, strip_format).day
-                listing_id = k['listing_id']
-                month = strip(created, strip_format).month
-                price = float((k['price']))
-                paid_est = ts(k['paid_tsz']).isoformat()
-                quantity = k['quantity']
-                quarter = ((strip(created, strip_format).month - 1) // 3) + 1
-                receipt_id = k['receipt_id']
-                week_num = strip(created, strip_format).isocalendar()[1]
-                year = strip(created, strip_format).year
-
-                qry_temp_data = """INSERT INTO tbl_temp(
-                import_timestamp,
-                buyer_user_id, 
-                currency_code, 
-                created, 
-                day,
-                listing_id,
-                month,
-                price, 
-                paid_est, 
-                quantity,
-                quarter, 
-                receipt_id, 
-                transaction_id,
-                week_num,
-                year) 
-                Values(Now(), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);"""
-                cur.execute(qry_temp_data, (buyer_user_id,
-                                            currency_code,
-                                            created,
-                                            day,
-                                            listing_id,
-                                            month,
-                                            price,
-                                            paid_est,
-                                            quantity,
-                                            quarter,
-                                            receipt_id,
-                                            transaction_id,
-                                            week_num,
-                                            year))
-                con.commit()
-
-            qry_insert_new_data = """
-            INSERT INTO tbl_etsy_trans(
-            import_timestamp,
-            buyer_user_id, 
-            currency_code, 
-            created, 
-            day,
-            listing_id,
-            month,
-            price, 
-            paid_est, 
-            quantity,
-            quarter, 
-            receipt_id, 
-            transaction_id,
-            week_num,
-            year)
-            
-            SELECT
-            SQ1.import_timestamp,
-            SQ1.buyer_user_id ,
-            SQ1.currency_code ,
-            SQ1.created ,
-            SQ1.day,
-            SQ1.listing_id,
-            SQ1.month,
-            SQ1.price ,
-            SQ1.paid_est ,
-            SQ1.quantity,
-            SQ1.quarter ,
-            SQ1.receipt_id ,
-            SQ1.transaction_id,
-            SQ1.week_num,
-            SQ1.year
-            
-            FROM (SELECT
-            import_timestamp,
-            buyer_user_id, 
-            currency_code, 
-            created, 
-            day,
-            listing_id,
-            month,
-            price, 
-            paid_est, 
-            quantity,
-            quarter, 
-            receipt_id, 
-            transaction_id,
-            week_num,
-            year FROM tbl_temp) AS SQ1 LEFT JOIN tbl_etsy_trans ON SQ1.transaction_id = tbl_etsy_trans.transaction_id WHERE tbl_etsy_trans.transaction_id IS NULL;"""
-            print("     Inserting New Data Into Table")
-            cur.execute(qry_insert_new_data)
-            con.commit()
-        cur.close()
-        con.close()
-        print(" Process Complete\n")
-
-    def receipt_updates(data):
-        print(" Saving Receipt Data to SQL:")
-        user = pydict.sql_dict.get('user')
-        password = pydict.sql_dict.get('password')
-        host = pydict.sql_dict.get('host')
-        charset = pydict.sql_dict.get('charset')
-        db = pydict.sql_dict.get('db_etsy')
-        con = pymysql.connect(user=user, password=password, host=host, database=db, charset=charset)
-
-        with con.cursor() as cur:
-            print("     Creating Temp Table")
+            print("   Creating Temp Table")
             qry_temp_table = """CREATE TEMPORARY TABLE IF NOT EXISTS tbl_temp LIKE etsy.tbl_etsy_receipts;"""
             cur.execute(qry_temp_table)
             con.commit()
 
-            print("     Inserting API Data Into Temp Table")
-            for k in data['results']:
+            print("   Inserting API Data Into Temp Table")
+            for k in data.values():
                 created = ts(k['creation_tsz']).isoformat()
                 receipt_id = k["receipt_id"],
                 adjusted_grandtotal = float(k['adjusted_grandtotal']),
@@ -570,7 +445,7 @@ class sql:
                                                   zip))
                 con.commit()
 
-            print("     Updating Table with API Data")
+            print("   Updating Table with API Data")
             qry_update_table = """
             UPDATE tbl_etsy_receipts
             INNER JOIN tbl_temp ON tbl_etsy_receipts.receipt_id = tbl_temp.receipt_id
@@ -613,26 +488,25 @@ class sql:
             con.commit()
         cur.close()
         con.close()
-        print(" Process Complete\n")
+        print("   Receipts Updated in SQL")
 
-    def trans_updates(data):
-        print(" Saving Transaction Data to SQL:")
+    def tranactions_new(data):
+        print("   Saving Transaction Data to SQL:")
         user = pydict.sql_dict.get('user')
         password = pydict.sql_dict.get('password')
         host = pydict.sql_dict.get('host')
         charset = pydict.sql_dict.get('charset')
         db = pydict.sql_dict.get('db_etsy')
-        print(" Saving API Data to SQL")
         con = pymysql.connect(user=user, password=password, host=host, database=db, charset=charset)
 
         with con.cursor() as cur:
-            print("     Creating Temp Table")
+            print("   Creating Temp Table")
             qry_temp_table = """CREATE TEMPORARY TABLE IF NOT EXISTS tbl_temp like etsy.tbl_etsy_trans;"""
             cur.execute(qry_temp_table)
             con.commit()
 
-            print("     Inserting API Data Into Temp Table")
-            for k in data['results']:
+            print("   Inserting Data Into Temp Table")
+            for k in data.values():
                 transaction_id = k["transaction_id"]
                 buyer_user_id = k['buyer_user_id']
                 currency_code = k['currency_code']
@@ -681,163 +555,171 @@ class sql:
                                             year))
                 con.commit()
 
-            print("     Updating Table with API Data")
-            qry_update_table = """
-            UPDATE tbl_etsy_trans
-            INNER JOIN tbl_temp ON tbl_etsy_trans.transaction_id = tbl_temp.transaction_id
-            SET
-            tbl_etsy_trans.import_timestamp = tbl_temp.import_timestamp,
-            tbl_etsy_trans.buyer_user_id = tbl_temp.buyer_user_id,
-            tbl_etsy_trans.currency_code = tbl_temp.currency_code,
-            tbl_etsy_trans.created  = tbl_temp.created,
-            tbl_etsy_trans.day = tbl_temp.day,
-            tbl_etsy_trans.listing_id = tbl_temp.listing_id,
-            tbl_etsy_trans.month = tbl_temp.month,
-            tbl_etsy_trans.price = tbl_temp.price,
-            tbl_etsy_trans.paid_est = tbl_temp.paid_est,
-            tbl_etsy_trans.quantity = tbl_temp.quantity,
-            tbl_etsy_trans.quarter = tbl_temp.quarter,
-            tbl_etsy_trans.receipt_id = tbl_temp.receipt_id,
-            tbl_etsy_trans.transaction_id = tbl_temp.transaction_id,
-            tbl_etsy_trans.week_num = tbl_temp.week_num,
-            tbl_etsy_trans.year = tbl_temp.year;"""
-            cur.execute(qry_update_table)
+            qry_insert_new_data = """
+            INSERT INTO tbl_etsy_trans(
+            import_timestamp,
+            buyer_user_id, 
+            currency_code, 
+            created, 
+            day,
+            listing_id,
+            month,
+            price, 
+            paid_est, 
+            quantity,
+            quarter, 
+            receipt_id, 
+            transaction_id,
+            week_num,
+            year)
+
+            SELECT
+            SQ1.import_timestamp,
+            SQ1.buyer_user_id ,
+            SQ1.currency_code ,
+            SQ1.created ,
+            SQ1.day,
+            SQ1.listing_id,
+            SQ1.month,
+            SQ1.price ,
+            SQ1.paid_est ,
+            SQ1.quantity,
+            SQ1.quarter ,
+            SQ1.receipt_id ,
+            SQ1.transaction_id,
+            SQ1.week_num,
+            SQ1.year
+
+            FROM (SELECT
+            import_timestamp,
+            buyer_user_id, 
+            currency_code, 
+            created, 
+            day,
+            listing_id,
+            month,
+            price, 
+            paid_est, 
+            quantity,
+            quarter, 
+            receipt_id, 
+            transaction_id,
+            week_num,
+            year FROM tbl_temp) AS SQ1 LEFT JOIN tbl_etsy_trans ON SQ1.transaction_id = tbl_etsy_trans.transaction_id WHERE tbl_etsy_trans.transaction_id IS NULL;"""
+            print("   Inserting New Data Into Table")
+            cur.execute(qry_insert_new_data)
             con.commit()
         cur.close()
         con.close()
-        print(" Process Complete\n")
+        print("   Transactions Entered into SQL")
 
-class api:
-    # API Auth Fields
-    api = pydict.new_app_api_auth.get
-    token = api('oauth_token')
-    key = api('oauth_consumer_key')
-    nonce = api('oauth_nonce')
-    sign = api('oauth_signature')
-    header = pydict.api_header
-
-    def update_time():
-        utc_sec = td(seconds=18000)
-        yd_sec = td(seconds=86400)
-        yd_utc = (now + utc_sec)-yd_sec
-        #update_time = dt(year=yd_utc.year, month=yd_utc.month, day=yd_utc.day, hour=23, minute=59, second=59)
-        update_time = "2019-12-31 23:59:59"
-        return update_time
-
-    def api_log(time, market, ep, code, descr):
+    def api_log(time, endpoint, code, descr):
         user = pydict.sql_dict.get('user')
         password = pydict.sql_dict.get('password')
         host = pydict.sql_dict.get('host')
         charset = pydict.sql_dict.get('charset')
-        db = "rtcaws01"  # sql('db_rtc')
+        db = "rtcaws01"
         con = pymysql.connect(user=user, password=password, host=host, database=db, charset=charset)
 
         with con.cursor() as cur:
-            qry_update = """INSERT INTO tbl_api_log(timestamp, market, endpoint, api_code, code_descr) VALUES(%s, %s, %s, %s, %s);"""
-            #endpoint = log["endpoint"]
-            #api_code = log["api_code"]
-            #code_descr = log["code_descr"]
-            cur.execute(qry_update, (time, market, ep, code, descr))
-            con.commit()
+                qry_update = """INSERT INTO tbl_api_log(timestamp, market, endpoint, api_code, code_descr) VALUES(%s, %s, %s, %s, %s);"""
+                market = "Etsy"
+                cur.execute(qry_update, (time, market, endpoint, code, descr))
+                con.commit()
         cur.close()
         con.close()
 
-    def api_call(str, param, time, type):
-        print("Starting API Call")
-        endpoint = pydict.etsy_urls.get(str)
-        api_log = {}
-        limit = 50
-        offset = 0
+class api:
+    def update_time():
+        utc_sec = td(seconds=18000)
+        yd_sec = td(seconds=86400)
+        yd_utc = (now + utc_sec)-yd_sec
+
+        #update_time = dt(year=yd_utc.year, month=yd_utc.month, day=yd_utc.day, hour=23, minute=59, second=59)
+        update_time = "2021-03-01 23:59:59"
+        return update_time
+
+    def call_etsy(url, limit, offset, filter, time, endpoint):
         calls = 0
+        count = 0
         params = {"limit": limit,
                   "offset": offset,
-                  param: time}
+                  filter: time}
         header = pydict.api_header
         payload = {}
-        response = requests.get(endpoint, params=params, headers=header, json=payload)
-        data = response.json()
-        records_received = len([len(data) for i in data['results']])
+        data1 = requests.get(url, params=params, headers=header, json=payload)
+        data2 = data1.json()
+        data3 = data2['results']
+        code = data1.status_code
+        code_descr = pydict.api_codes.get("etsy").get(code)
+        records = len(data3)
 
-        while records_received == limit:
-            calls += 1
-            offset = calls * limit
-            params = {"limit": limit,
-                  "offset": offset,
-                  param: time}
-            response = requests.get(endpoint, params=params, headers=header, json=payload)
-            data = response.json()
-            api = "etsy"
-            code = response.status_code
-            descr = pydict.api_codes.get(api).get(code)
-            records_received = len([len(data) for i in data['results']])
-            print("API Call:", calls, "| Records:", records_received, "| Offset:", offset)
-            test = pydict.api_codes.get("etsy").get(200)
+        if records < limit:
+            sql.api_log(time, endpoint, code, code_descr)
+            for i in data3:
+                count += 1
+                temp = {count: i}
+                data.update(temp)
+        else:
+            while records == limit:
+                offset = calls * limit
+                params = {"limit": limit,
+                          "offset": offset,
+                          filter: time}
+                data1 = requests.get(url, params=params, headers=header, json=payload)
+                data2 = data1.json()
+                data3 = data2['results']
+                code = data1.status_code
+                code_descr = pydict.api_codes.get("etsy").get(code)
+                sql.api_log(time, endpoint, code, code_descr)
+                records = len(data3)
+                calls += 1
+                print("   Call:", calls, "| Records:", records, "| Offset:", offset)
+                for i in data3:
+                    count += 1
+                    temp = {count: i}
+                    data.update(temp)
 
-            if str == "receipts":
-                if type == "New":
-                    timestamp = time,
-                    market = 'Etsy',
-                    ep = 'New Receipts',
-                    api_code = code,
-                    code_descr = "descr"
-                    #api_log(timestamp, market, ep, code, descr)
-                    sql.new_receipts(data)
-                else:
-                    log = {"timestamp": time,
-                           "endpoint": 'Update Receipts',
-                           "api": "Etsy",
-                           'market': 'Etsy',
-                           'response_code': code,
-                           'response_descr': descr}
-                    sql.receipt_updates(data)
-            elif str == "trans":
-                if type == "New":
-                    log = {"timestamp": time,
-                            "market": 'Etsy',
-                            "endpoint": 'New Transactions',
-                            'api_code': code,
-                            'code_descr': descr}
-                    #api.api_log(log)
-                    sql.new_trans(data)
-                else:
-                    log = {"timestamp": time,
-                           "endpoint": 'Update Transactions',
-                           "api": "Etsy",
-                           'market': 'Etsy',
-                           'response_code': code,
-                           'response_descr': descr}
-                    sql.trans_updates(data)
-            else:
-                pass
+class etsy_data:
+    def receipts_new():
+        print("Retrieving New Etsy Receipts Data")
+        url = pydict.etsy_urls.get('receipts')
+        limit = 100
+        offset = 0
+        filter = "min_created"
+        time = api.update_time()
+        endpoint = "New Receipts"
+        api.call_etsy(url, limit, offset, filter, time, endpoint)
+        print("   Etsy Receipts API Call Complete")
+        sql.receipts_new(data)
+        print("New Etsy Receipts Data Process Complete\n")
 
+    def receipts_update():
+        print("Retrieving Update Etsy Receipts Data")
+        url = pydict.etsy_urls.get('receipts')
+        limit = 100
+        offset = 0
+        filter = "min_last_modified"
+        time = api.update_time()
+        endpoint = "Update Receipts"
+        api.call_etsy(url, limit, offset, filter, time, endpoint)
+        print("   Etsy Update Receipts API Call Complete")
+        sql.receipts_update(data)
+        print("Update Etsy Receipts Data Process Complete\n")
 
-def new_receipts():
-    time = api.update_time()
-    param = "min_created"
-    type = "New"
-    api.api_call("receipts", param, time, type)
+    def transactions_new():
+        print("Retrieving New Etsy Transactions Data")
+        url = pydict.etsy_urls.get('transactions')
+        endpoint = "New Transactions"
+        limit = 100
+        offset = 0
+        time = api.update_time()
+        filter = "min_created"
+        api.call_etsy(url, limit, offset, filter, time, endpoint)
+        print("   Etsy Transactions API Call Complete")
+        sql.tranactions_new(data)
+        print("New Etsy Transaction Data Process Complete\n")
 
-def update_receipts():
-    time = api.update_time()
-    param = "min_last_modified"
-    type = "Update"
-    api.api_call("receipts", param, time, type)
-
-def new_trans():
-    time = api.update_time()
-    param = "min_created"
-    type = "New"
-    api.api_call("trans", param, time, type)
-
-def update_trans():
-    time = api.update_time()
-    param = "min_last_modified"
-    type = "Update"
-    api.api_call("trans", param, time, type)
-
-def functions():
-    new_receipts()
-    #new_trans()
-    #update_receipts()
-    #update_trans()
-functions()
+etsy_data.receipts_new()
+etsy_data.receipts_update()
+etsy_data.transactions_new()

@@ -24,20 +24,20 @@ api_auth = {
     'oauth_token': '',
     'oauth_signature': '',
     'oauth_nonce': '',
-    'url': 'https://openapi.etsy.com/v2/shops/20978352/transactions?'
+    'url': 'https://openapi.etsy.com/v2/shops/(shopid)/transactions?'
 }
 etsy_data_url= {
-    'new_receipts': 'https://openapi.etsy.com/v2/shops/20978352/receipts?findAllShopReceipts&limit=100&min_last_modified=%s',
-    'hist_recepts': ["https://openapi.etsy.com/v2/shops/20978352/receipts?&limit=100&offset=0",
-                     "https://openapi.etsy.com/v2/shops/20978352/receipts?&limit=100&offset=100",
-                     "https://openapi.etsy.com/v2/shops/20978352/receipts?&limit=100&offset=200",
-                     "https://openapi.etsy.com/v2/shops/20978352/receipts?&limit=100&offset=300",
-                     "https://openapi.etsy.com/v2/shops/20978352/receipts?&limit=100&offset=400"],
-    'new_trans': 'https://openapi.etsy.com/v2/shops/20978352/transactions?findAllListingTransactions&limit=100&min_last_modified=%s',
-    'hist_trans': ["https://openapi.etsy.com/v2/shops/20978352/transactions?limit=100&offset=0",
-                   "https://openapi.etsy.com/v2/shops/20978352/transactions?limit=100&offset=100",
-                   "https://openapi.etsy.com/v2/shops/20978352/transactions?limit=100&offset=200",
-                   "https://openapi.etsy.com/v2/shops/20978352/transactions?limit=100&offset=300"]
+    'new_receipts': 'https://openapi.etsy.com/v2/shops/(shopid)/receipts?findAllShopReceipts&limit=100&min_last_modified=%s',
+    'hist_recepts': ["https://openapi.etsy.com/v2/shops/(shopid)/receipts?&limit=100&offset=0",
+                     "https://openapi.etsy.com/v2/shops/(shopid)/receipts?&limit=100&offset=100",
+                     "https://openapi.etsy.com/v2/shops/(shopid)/receipts?&limit=100&offset=200",
+                     "https://openapi.etsy.com/v2/shops/(shopid)/receipts?&limit=100&offset=300",
+                     "https://openapi.etsy.com/v2/shops/(shopid)/receipts?&limit=100&offset=400"],
+    'new_trans': 'https://openapi.etsy.com/v2/shops/(shopid)/transactions?findAllListingTransactions&limit=100&min_last_modified=%s',
+    'hist_trans': ["https://openapi.etsy.com/v2/shops/(shopid)/transactions?limit=100&offset=0",
+                   "https://openapi.etsy.com/v2/shops/(shopid)/transactions?limit=100&offset=100",
+                   "https://openapi.etsy.com/v2/shops/(shopid)/transactions?limit=100&offset=200",
+                   "https://openapi.etsy.com/v2/shops/(shopid)/transactions?limit=100&offset=300"]
 }
 
 params = ['shop_id', 'was_paid', 'listings_d', 'transactions_r', 'transactions_w', 'address_w', 'feedback_r']

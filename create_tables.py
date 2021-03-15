@@ -2,23 +2,16 @@ _author_ = 'arichland'
 
 import pymysql
 import pydict
-
-# SQL DB Connection Fields
 sql = pydict.sql_dict.get
-user = sql('user')
-password = sql('password')
-host = sql('host')
-charset = sql('charset')
-cusrorType = pymysql.cursors.DictCursor
 
 def create_tbl_receipts():
+    user = sql('user')
+    password = sql('password')
+    host = sql('host')
+    charset = sql('charset')
+    cusrorType = pymysql.cursors.DictCursor
     db = sql('db_etsy')
-    con = pymysql.connect(user=user,
-                          password=password,
-                          host=host,
-                          database=db,
-                          charset=charset,
-                          cursorclass=cusrorType)
+    con = pymysql.connect(user=user, password=password, host=host, database=db, charset=charset, cursorclass=cusrorType)
 
     with con.cursor() as cur:
         qry_tbl_receipts = """CREATE TABLE IF NOT EXISTS tbl_etsy_receipts(
@@ -71,6 +64,11 @@ def create_tbl_receipts():
     con.close()
 
 def create_tbl_transactions():
+    user = sql('user')
+    password = sql('password')
+    host = sql('host')
+    charset = sql('charset')
+    cusrorType = pymysql.cursors.DictCursor
     db = sql('db_etsy')
     con = pymysql.connect(user=user,
                           password=password,
@@ -104,18 +102,19 @@ def create_tbl_transactions():
     con.close()
 
 def create_tbl_api_log():
+    user = sql('user')
+    password = sql('password')
+    host = sql('host')
+    charset = sql('charset')
+    cusrorType = pymysql.cursors.DictCursor
     db = sql('db_rtc')
-    con = pymysql.connect(user=user,
-                          password=password,
-                          host=host,
-                          database=db,
-                          charset=charset,
-                          cursorclass=cusrorType)
+    con = pymysql.connect(user=user, password=password, host=host, database=db, charset=charset, cursorclass=cusrorType)
 
     with con.cursor() as cur:
         qry_create_table = """CREATE TABLE IF NOT EXISTS tbl_api_log(
         id INT AUTO_INCREMENT PRIMARY KEY,
         timestamp DATETIME,
+        epoch DATETIME,
         market TEXT,
         endpoint TEXT,
         api_code INT,
@@ -125,8 +124,89 @@ def create_tbl_api_log():
     cur.close()
     con.close()
 
+def create_tbl_listings():
+    user = sql('user')
+    password = sql('password')
+    host = sql('host')
+    charset = sql('charset')
+    cusrorType = pymysql.cursors.DictCursor
+    db = sql('db_etsy')
+    con = pymysql.connect(user=user, password=password, host=host, database=db, charset=charset, cursorclass=cusrorType)
+
+    with con.cursor() as cur:
+        qry_create_table = """CREATE TABLE IF NOT EXISTS tbl_etsy_listings(
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                import_timestamp DATETIME,
+                created_date DATETIME,
+                currency_code TEXT,
+                ending_date DATETIME,
+                featured_rank INT,
+                has_variations BOOLEAN,
+                is_customizable BOOLEAN,
+                item_dimensions_unit TEXT,
+                item_height INT,
+                item_length INT,
+                item_weight INT,
+                item_weight_unit TEXT,
+                item_width INT,
+                last_modified_date DATETIME,
+                listing_id BIGINT,
+                non_taxable BOOLEAN,
+                num_favorers INT,
+                occasion TEXT,
+                original_created_date DATETIME,
+                price DOUBLE,
+                processing_max INT,
+                processing_min INT,
+                quantity INT,
+                recipient TEXT,
+                shipping_profile_id BIGINT,
+                shipping_template_id BIGINT,
+                shop_section_id BIGINT,
+                should_auto_renew BOOLEAN,
+                state TEXT,
+                state_tsz DATETIME,
+                style TEXT,
+                taxonomy_id INT,
+                title TEXT,
+                url TEXT,
+                user_id BIGINT,
+                views INT,
+                when_made TEXT,
+                who_made TEXT)
+                ENGINE=INNODB;"""
+        cur.execute(qry_create_table)
+        cur.close()
+        con.close()
+
+def create_tbl_etsy_metrics():
+    user = sql('user')
+    password = sql('password')
+    host = sql('host')
+    charset = sql('charset')
+    cusrorType = pymysql.cursors.DictCursor
+    db = sql('db_etsy')
+    con = pymysql.connect(user=user, password=password, host=host, database=db, charset=charset, cursorclass=cusrorType)
+
+    with con.cursor() as cur:
+        qry_create_table = """CREATE TABLE IF NOT EXISTS tbl_etsy_metrics(
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                timestamp DATETIME,                
+                featured_rank INT,                
+                listing_id BIGINT,                
+                num_favorers INT,                
+                title TEXT,                
+                views INT)
+                ENGINE=INNODB;"""
+        cur.execute(qry_create_table)
+        cur.close()
+        con.close()
+
+
 def create_tables():
     create_tbl_receipts()
     create_tbl_transactions()
     create_tbl_api_log()
+    create_tbl_listings()
+    create_tbl_etsy_metrics()
 create_tables()

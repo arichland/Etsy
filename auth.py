@@ -9,7 +9,7 @@ from urllib.parse import parse_qs
 import pydict
 pp = pprint.PrettyPrinter(indent=1)
 
-api = pydict.new_app_api_auth.get
+api = pydict.etsy_auth.get
 user_id = api('oauth_user_id')
 client_key = api('oauth_consumer_key')
 client_secret = api('client_secret')

@@ -17,7 +17,52 @@ now = dt.now()
 ts = dt.fromtimestamp
 
 class sql:
-    def listings_active(data):
+    def listings_from_sql():
+        print("   Saving New Receipts to SQL:")
+        user = pydict.sql_dict.get('user')
+        password = pydict.sql_dict.get('password')
+        host = pydict.sql_dict.get('host')
+        charset = pydict.sql_dict.get('charset')
+        db = pydict.sql_dict.get('db_etsy')
+        con = pymysql.connect(user=user, password=password, host=host, database=db, charset=charset)
+        data = {}
+
+        with con.cursor() as cur:
+            print("   Getting listings from SQL")
+            query = """SELECT * FROM etsy.tbl_etsy_listings;"""
+            cur.execute(query)
+            rows = cur.fetchall()
+            headers = cur.description
+            h1 = range(len(headers))
+
+            for row in rows:
+                temp = {row[0]: {
+                    headers[5][0]: row[5],
+                    headers[7][0]: row[7],
+                    headers[8][0]: row[8],
+                    headers[9][0]: row[9],
+                    headers[10][0]: row[10],
+                    headers[11][0]: row[11],
+                    headers[12][0]: row[12],
+                    headers[13][0]: row[13],
+                    headers[18][0]: row[18],
+                    headers[20][0]: row[20],
+                    headers[21][0]: row[21],
+                    headers[22][0]: row[22],
+                    headers[24][0]: row[24],
+                    headers[25][0]: row[25],
+                    headers[28][0]: row[28],
+                    headers[30][0]: row[30],
+                    headers[31][0]: row[31],
+                    headers[32][0]: row[32],
+                    headers[36][0]: row[36],
+                    headers[37][0]: row[37]}}
+                print(temp)
+            con.commit()
+        cur.close()
+        con.close()
+
+    def listings_active_to_sql(data):
         print("   Saving New Receipts to SQL:")
         user = pydict.sql_dict.get('user')
         password = pydict.sql_dict.get('password')
@@ -70,6 +115,7 @@ class sql:
                 views = k['views']
                 when_made = k['when_made']
                 who_made = k['who_made']
+                tags = ",".join(k['tags'])
 
                 qry_temp_data = """Insert into tbl_temp(import_timestamp,
                     created_date,
@@ -271,7 +317,7 @@ class sql:
         cur.close()
         con.close()
 
-    def listings_metrics(data):
+    def listings_metrics_to_sql(data):
         print("   Saving Metrics to SQL")
         user = pydict.sql_dict.get('user')
         password = pydict.sql_dict.get('password')
@@ -305,6 +351,23 @@ class sql:
         print("Etsy Listing Metrics Process Complete")
 
 class listing_functions:
+    def update_listing():
+        base = pydict.etsy_urls.get('base')
+        url = base+"/listing/"
+
+        limit = 50
+        offset = 0
+        filter = ''
+        time = ''
+        endpoint = "Update Listings"
+        params = {"limit": limit,
+                  "offset": offset}
+        method = "Get"
+        data = etsy.api.call_etsy(method, url, params, limit, endpoint)
+        #for k in data.values():
+        #    pp.pprint(k)
+        #sql.listings_active(data)
+
     def listings():
         url = pydict.etsy_urls.get('shop_listings')
         limit = 50
@@ -317,8 +380,10 @@ class listing_functions:
         method = "Get"
         data = etsy.api.call_etsy(method, url, params, limit, endpoint)
         for k in data.values():
-            pp.pprint(k)
-        sql.listings_active(data)
+            tags = k['tags']
+            ",".join(tags)
+            print(",".join(tags))
+        #sql.listings_active_to_sql(data)
 
     def products():
         base = pydict.etsy_urls.get('shop_listings')
@@ -334,7 +399,7 @@ class listing_functions:
         data = etsy.api.call_etsy(method, url, params, limit, endpoint)
         for k in data.values():
             pp.pprint(k)
-        sql.listings_active(data)
+        #sql.listings_active(data)
 
     def metrics():
         print("\nRetrieving Etsy Listing Metrics")
@@ -349,4 +414,6 @@ class listing_functions:
         method = "Get"
         data = etsy.api.call_etsy(method, url, params, limit, endpoint)
         pp.pprint(data)
-        sql.listings_metrics(data)
+        sql.listings_metrics_to_sql(data)
+
+#sql.listings_from_sql()

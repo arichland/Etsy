@@ -386,8 +386,7 @@ class listing_functions:
         #sql.listings_active_to_sql(data)
 
     def products():
-        base = pydict.etsy_urls.get('shop_listings')
-        url = "https://openapi.etsy.com/v2/shops/20978352/products?"
+        url = pydict.etsy_urls.get('listing_product')
         limit = 50
         offset = 0
         filter = ''
@@ -397,9 +396,7 @@ class listing_functions:
                   "offset": offset}
         method = "Get"
         data = etsy.api.call_etsy(method, url, params, limit, endpoint)
-        for k in data.values():
-            pp.pprint(k)
-        #sql.listings_active(data)
+        pp.pprint(data)
 
     def metrics():
         print("\nRetrieving Etsy Listing Metrics")
@@ -414,6 +411,6 @@ class listing_functions:
         method = "Get"
         data = etsy.api.call_etsy(method, url, params, limit, endpoint)
         pp.pprint(data)
-        sql.listings_metrics_to_sql(data)
+        #sql.listings_metrics_to_sql(data)
 
-#sql.listings_from_sql()
+listing_functions.products()

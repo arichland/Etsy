@@ -6,7 +6,6 @@ from datetime import datetime, timedelta, timezone, date
 import etsy_api as etsy
 pp = pprint.PrettyPrinter(indent=1)
 
-
 # Setup Epoch timestamp for Etsy API
 dt = datetime
 td = timedelta
@@ -358,6 +357,7 @@ class sql:
                 year = strip(created, strip_format).year,
                 zip = k['zip']
 
+
                 qry_insert_temp_data = """Insert into tbl_temp(
                             import_timestamp,
                             receipt_id,
@@ -505,7 +505,7 @@ class sql:
 
             print("   Inserting Data Into Temp Table")
             for k in data.values():
-                transaction_id = k["transaction_id"]
+                transaction_id = k['transaction_id']
                 buyer_user_id = k['buyer_user_id']
                 currency_code = k['currency_code']
                 created = ts(k['creation_tsz']).isoformat()
@@ -514,6 +514,7 @@ class sql:
                 month = strip(created, strip_format).month
                 price = float((k['price']))
                 paid_est = ts(k['paid_tsz']).isoformat()
+                product_id = k['product_data']['product_id']
                 quantity = k['quantity']
                 quarter = ((strip(created, strip_format).month - 1) // 3) + 1
                 receipt_id = k['receipt_id']
@@ -529,14 +530,15 @@ class sql:
                 listing_id,
                 month,
                 price, 
-                paid_est, 
+                paid_est,
+                product_id, 
                 quantity,
                 quarter, 
-                receipt_id, 
+                receipt_id,
                 transaction_id,
                 week_num,
                 year) 
-                Values(Now(), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);"""
+                Values(Now(), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);"""
                 cur.execute(qry_temp_data, (buyer_user_id,
                                             currency_code,
                                             created,
@@ -545,6 +547,7 @@ class sql:
                                             month,
                                             price,
                                             paid_est,
+                                            product_id,
                                             quantity,
                                             quarter,
                                             receipt_id,
@@ -563,7 +566,8 @@ class sql:
             listing_id,
             month,
             price, 
-            paid_est, 
+            paid_est,
+            product_id, 
             quantity,
             quarter, 
             receipt_id, 
@@ -573,17 +577,18 @@ class sql:
 
             SELECT
             SQ1.import_timestamp,
-            SQ1.buyer_user_id ,
-            SQ1.currency_code ,
-            SQ1.created ,
+            SQ1.buyer_user_id,
+            SQ1.currency_code,
+            SQ1.created,
             SQ1.day,
             SQ1.listing_id,
             SQ1.month,
-            SQ1.price ,
-            SQ1.paid_est ,
+            SQ1.price,
+            SQ1.paid_est,
+            SQ1.product_id,
             SQ1.quantity,
-            SQ1.quarter ,
-            SQ1.receipt_id ,
+            SQ1.quarter,
+            SQ1.receipt_id,
             SQ1.transaction_id,
             SQ1.week_num,
             SQ1.year
@@ -597,7 +602,8 @@ class sql:
             listing_id,
             month,
             price, 
-            paid_est, 
+            paid_est,
+            product_id, 
             quantity,
             quarter, 
             receipt_id, 
@@ -625,7 +631,8 @@ class order_functions:
         method = "Get"
         data = etsy.api.call_etsy(method, url, params, limit, endpoint)
         print("   Etsy Receipts API Call Complete")
-        # sql.receipts_new(data)
+        sql.receipts_new(data)
+        pp.pprint(data)
 
         print("New Etsy Receipts Data Process Complete\n")
 

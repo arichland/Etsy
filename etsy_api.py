@@ -25,7 +25,7 @@ class api:
         yd_utc = (now + utc_sec) - yd_sec
 
         update_time = dt(year=yd_utc.year, month=yd_utc.month, day=yd_utc.day, hour=23, minute=59, second=59)
-        #update_time = "2020-03-01 23:59:59"
+        #update_time = "2019-12-31 23:59:59"
         return update_time
 
     def call_log(time, endpoint, code, descr):

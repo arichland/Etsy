@@ -89,9 +89,11 @@ def create_tbl_transactions():
             month INT,
             price DOUBLE,
             paid_est DATETIME,
+            product_id BIGINT,
             quantity INT,
             quarter INT,
             receipt_id BIGINT,
+            sku TEXT,
             transaction_id BIGINT,
             week_num INT,
             year INT)

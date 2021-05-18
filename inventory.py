@@ -2,7 +2,8 @@ _author_ = 'arichland'
 import pymysql
 import pydict
 import pprint
-import etsy_api as etsy
+import api
+import sql
 from datetime import datetime, timedelta, timezone, date
 pp = pprint.PrettyPrinter(indent=1)
 
@@ -15,28 +16,7 @@ strip_format = "%Y-%m-%dT%H:%M:%S"
 now = dt.now()
 ts = dt.fromtimestamp
 
-class sql:
-    def listing_id():
-        print("   Saving New Receipts to SQL:")
-        user = pydict.sql_dict.get('user')
-        password = pydict.sql_dict.get('password')
-        host = pydict.sql_dict.get('host')
-        charset = pydict.sql_dict.get('charset')
-        db = pydict.sql_dict.get('db_etsy')
-        con = pymysql.connect(user=user, password=password, host=host, database=db, charset=charset)
-        skus = []
-        with con.cursor() as cur:
-            query = """SELECT DISTINCT listing_id from tbl_etsy_listings;"""
-            cur.execute(query)
-            rows = cur.fetchall()
-            for row in rows:
-                skus.append(row[0])
-        return skus
-
-    def inventory_levels(data):
-        pass
-
-class inventory:
+class Main:
 
    def inventory_update():
        skus = sql.listing_id()

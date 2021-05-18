@@ -1,9 +1,17 @@
 _author_ = 'arichland'
-from listings2 import listing_functions
-from orders import order_functions
+import listings
+import orders
 
-order_functions.receipts_new()
-order_functions.receipts_update()
-order_functions.transactions_new()
-listing_functions.metrics()
-#listing_functions.listings()
+
+def get_orders():
+    ord = orders.Main()
+    ord.new_receipts()
+    #ord.update_receipts()
+    #ord.new_transactions()
+#get_orders()
+
+def get_listings():
+    lst = listings.Main()
+    #lst.listings()
+    lst.products()
+get_listings()
